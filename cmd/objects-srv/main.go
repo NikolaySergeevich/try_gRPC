@@ -1,20 +1,22 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"log/slog"
 	"net"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
 	h "try_grpc/internal/handler"
-	"trygrpc/pkg/pb"
+	"try_grpc/internal/memstore"
+	"try_grpc/pkg/pb"
 )
 
 func main() {
-	handler := h.NewHandler()
+	memStore := memstore.New()
+	handler := h.NewHandler(memStore, 10*time.Second)
+
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -24,7 +26,6 @@ func main() {
 	reflection.Register(s) // этот код нужен для дебаггинга
 	pb.RegisterLocationServiceServer(s, handler)
 
-	slog.Info(fmt.Sprintf("grpc serve %s", ":50051"))
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
